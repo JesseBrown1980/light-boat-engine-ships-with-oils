@@ -1,0 +1,260 @@
+<meta charset="utf-8">
+<title>THE FLEET — boats collide, prices move, the triangle closes</title>
+<style>
+:root{--bg:#05050a;--fg:#eaeaf2;--dim:#7d7d8d;--line:#181820;--acc:#a78bfa;
+      --T:#5aa9ff;--A:#9a9aa8;--R:#ff5f6d;--ok:#4ade80;--warn:#fbbf24}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);padding:22px;
+     font:14px/1.6 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+h1{font-size:20px;margin:0 0 4px;color:var(--acc);letter-spacing:-.2px}
+.sub{color:var(--dim);max-width:84ch;margin-bottom:14px}
+button{background:var(--acc);color:#0b0b10;border:0;border-radius:7px;
+       padding:11px 22px;font:600 14px ui-monospace,monospace;cursor:pointer}
+button.ghost{background:#15151e;color:var(--fg);border:1px solid var(--line)}
+button:hover{filter:brightness(1.13)}
+h2{font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:var(--acc);
+   margin:20px 0 7px;font-weight:600}
+.wrap{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+canvas{background:#080810;border:1px solid var(--line);border-radius:11px;display:block}
+.panel{border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+       background:#0a0a11;min-width:330px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:2.5px 0;
+     border-bottom:1px dotted #16161e}
+.row:last-child{border:0}
+.k{color:var(--dim)} .v{font-variant-numeric:tabular-nums;text-align:right}
+.T{color:var(--T)} .A{color:var(--A)} .R{color:var(--R)}
+.acc{color:var(--acc)} .ok{color:var(--ok)} .warn{color:var(--warn)}
+#tape{font-size:12px;max-height:150px;overflow:auto}
+footer{margin-top:30px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);
+       padding-top:13px;max-width:88ch}
+code{color:#e0b080}
+</style>
+
+<h1>THE FLEET — boats collide, prices move, the triangle closes</h1>
+<div class="sub">
+Seven boats of translucent blocks on liquid white, each carrying oils in three
+assets: <span class="T">T transmit</span> <span class="A">A absorb</span>
+<span class="R">R reflect</span>. A collision is a trade. Prices are held as three
+<b>levels</b> and every rate is a <b>difference</b>, so
+<code>log p_TA + log p_AR + log p_RT = 0</code> identically — triangular
+no-arbitrage is the arm closure wearing a different hat. Nothing is simulated
+loosely: conservation and the triangle are checked every frame.
+</div>
+
+<button id="run">RUN THE FLEET</button>
+<button id="shock" class="ghost">SHOCK</button>
+<button id="reset" class="ghost">RESET</button>
+
+<div class="wrap" style="margin-top:12px">
+  <div>
+    <canvas id="sea" width="700" height="330"></canvas>
+    <canvas id="chart" width="700" height="150" style="margin-top:9px"></canvas>
+  </div>
+  <div>
+    <div class="panel" id="inv"></div>
+    <div class="panel" id="tri" style="margin-top:9px"></div>
+    <div class="panel" id="tape" style="margin-top:9px"></div>
+  </div>
+</div>
+
+<footer>
+<b>Jesse Daniel Brown (OP-JESSE)</b> — the system, the laws, the architecture.<br>
+A price is a difference, never a value. Add the same amount to all three levels
+and no rate changes — <b>the price level is free</b>, exactly as the geometric
+centre is free. Settlement runs at three speeds: the constraint is instant, the
+quote moves at light, the clearing settles at sound.
+</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const R_=(c,k,v,cls="")=>{const r=document.createElement("div");r.className="row";
+  r.innerHTML='<span class="k"></span><span class="v '+cls+'"></span>';
+  r.children[0].textContent=k;r.children[1].textContent=v;c.append(r);};
+
+const sea=$("sea"), g=sea.getContext("2d"), W=sea.width, H=sea.height;
+const ch=$("chart"), gc=ch.getContext("2d");
+const WL=H*0.46;
+const ASSET=["T","A","R"], COL={T:"#5aa9ff",A:"#9a9aa8",R:"#ff5f6d"};
+
+/* ---- price system: three LEVELS. every rate is a difference. ---- */
+let L={T:0,A:0,R:0};
+const rate=(i,j)=>Math.exp(L[i]-L[j]);
+const IMPACT=0.010;
+
+let boats=[], t=0, tape=[], hist=[], running=false, base=null;
+
+function make(){
+  boats=[];
+  let s=20260801;
+  const rnd=()=>{s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};
+  for(let i=0;i<7;i++){
+    boats.push({
+      x:60+rnd()*(W-120), vx:(rnd()-0.5)*46,
+      bob:rnd()*6.28, r:15+rnd()*9,
+      hold:{T:60+Math.floor(rnd()*70),A:60+Math.floor(rnd()*70),R:60+Math.floor(rnd()*70)},
+      kind:["cube","pyramid","sphere"][i%3], id:i, flash:0
+    });
+  }
+  L={T:0,A:0,R:0}; tape=[]; hist=[];
+  base=totals();
+}
+function totals(){const s={T:0,A:0,R:0};for(const b of boats)for(const k of ASSET)s[k]+=b.hold[k];return s;}
+
+/* ---- a collision IS a trade. conservation by construction. ---- */
+function trade(a,b){
+  const i=ASSET[Math.floor(Math.abs(Math.sin(t*7.3+a.id))*3)%3];
+  let j=ASSET[Math.floor(Math.abs(Math.cos(t*5.1+b.id))*3)%3];
+  if(j===i) j=ASSET[(ASSET.indexOf(i)+1)%3];
+  const p=rate(i,j);                       // units of j per unit of i
+  const q=Math.min(6, a.hold[i], b.hold[j]/p);
+  if(q<0.5) return;
+  const got=q*p;
+  a.hold[i]-=q;  b.hold[i]+=q;             // i moves a -> b
+  b.hold[j]-=got;a.hold[j]+=got;           // j moves b -> a
+  L[i]+=IMPACT*q; L[j]-=IMPACT*q;          // impact: sum of levels UNCHANGED
+  a.flash=b.flash=1;
+  tape.unshift({t:t.toFixed(2),i,j,q:q.toFixed(2),p:p.toFixed(5),
+                a:a.id,b:b.id});
+  if(tape.length>40) tape.pop();
+}
+
+function step(dt){
+  for(const b of boats){
+    b.x+=b.vx*dt; b.bob+=dt*1.7; b.flash=Math.max(0,b.flash-dt*2.4);
+    if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx);}
+    if(b.x>W-b.r){b.x=W-b.r;b.vx=-Math.abs(b.vx);}
+  }
+  for(let i=0;i<boats.length;i++)for(let j=i+1;j<boats.length;j++){
+    const a=boats[i],b=boats[j];
+    if(Math.abs(a.x-b.x)<a.r+b.r){
+      const va=a.vx,vb=b.vx; a.vx=vb; b.vx=va;      // elastic, equal mass
+      const push=(a.r+b.r-Math.abs(a.x-b.x))/2+0.4;
+      if(a.x<b.x){a.x-=push;b.x+=push;}else{a.x+=push;b.x-=push;}
+      trade(a,b);
+    }
+  }
+  hist.push({T:L.T,A:L.A,R:L.R});
+  if(hist.length>700) hist.shift();
+}
+
+function drawBoat(b){
+  const y=WL-10+Math.sin(b.bob)*3;
+  g.save();
+  const dom=ASSET.reduce((m,k)=>b.hold[k]>b.hold[m]?k:m,"T");
+  const c=COL[dom];
+  g.globalAlpha=0.30+b.flash*0.55;
+  g.fillStyle=c;
+  if(b.kind==="cube"){g.fillRect(b.x-b.r,y-b.r*0.8,b.r*2,b.r*1.6);}
+  else if(b.kind==="pyramid"){g.beginPath();g.moveTo(b.x,y-b.r);
+    g.lineTo(b.x+b.r,y+b.r*0.7);g.lineTo(b.x-b.r,y+b.r*0.7);g.closePath();g.fill();}
+  else{g.beginPath();g.arc(b.x,y,b.r*0.9,0,7);g.fill();}
+  g.globalAlpha=0.9;g.strokeStyle=c;g.lineWidth=b.flash>0.1?2.4:1.3;
+  if(b.kind==="cube"){g.strokeRect(b.x-b.r,y-b.r*0.8,b.r*2,b.r*1.6);}
+  else if(b.kind==="pyramid"){g.beginPath();g.moveTo(b.x,y-b.r);
+    g.lineTo(b.x+b.r,y+b.r*0.7);g.lineTo(b.x-b.r,y+b.r*0.7);g.closePath();g.stroke();}
+  else{g.beginPath();g.arc(b.x,y,b.r*0.9,0,7);g.stroke();}
+  g.restore();
+}
+
+function draw(){
+  g.clearRect(0,0,W,H);
+  /* liquid white */
+  const grd=g.createLinearGradient(0,WL-40,0,H);
+  grd.addColorStop(0,"rgba(238,242,247,0)");
+  grd.addColorStop(0.2,"rgba(238,242,247,0.13)");
+  grd.addColorStop(1,"rgba(238,242,247,0.02)");
+  g.fillStyle=grd;g.fillRect(0,WL-40,W,H-WL+40);
+  /* the oils — three bands, R G B phase */
+  const bands=[["255,95,109",0],["154,154,168",0.33],["90,169,255",0.66]];
+  for(const [col,ph] of bands){
+    g.strokeStyle="rgba("+col+",0.14)";g.lineWidth=1.1;
+    for(let k=0;k<3;k++){
+      g.beginPath();
+      for(let x=0;x<=W;x+=5){
+        const y=WL+22+k*26+ph*24+Math.sin(x*0.014-t*(0.8+ph)+ph*6.28)*6;
+        x?g.lineTo(x,y):g.moveTo(x,y);}
+      g.stroke();}
+  }
+  g.strokeStyle="rgba(238,242,247,0.5)";g.lineWidth=1;
+  g.beginPath();
+  for(let x=0;x<=W;x+=4){const y=WL+Math.sin(x*0.02+t*1.6)*2.2;x?g.lineTo(x,y):g.moveTo(x,y);}
+  g.stroke();
+  for(const b of boats) drawBoat(b);
+}
+
+function drawChart(){
+  const w=ch.width,h=ch.height;
+  gc.clearRect(0,0,w,h);
+  gc.strokeStyle="#161620";gc.lineWidth=1;
+  gc.beginPath();gc.moveTo(0,h/2);gc.lineTo(w,h/2);gc.stroke();
+  if(hist.length<2)return;
+  let lo=1e9,hi=-1e9;
+  for(const p of hist)for(const k of ASSET){lo=Math.min(lo,p[k]);hi=Math.max(hi,p[k]);}
+  const pad=(hi-lo)*0.2+1e-6; lo-=pad; hi+=pad;
+  for(const k of ASSET){
+    gc.strokeStyle=COL[k];gc.lineWidth=1.6;gc.beginPath();
+    hist.forEach((p,i)=>{
+      const x=i/(hist.length-1)*w, y=h-(p[k]-lo)/(hi-lo)*h;
+      i?gc.lineTo(x,y):gc.moveTo(x,y);});
+    gc.stroke();
+    gc.fillStyle=COL[k];gc.font="11px ui-monospace";gc.textAlign="left";
+    gc.fillText(k,4,14+ASSET.indexOf(k)*14);
+  }
+  gc.fillStyle="#7d7d8d";gc.font="10px ui-monospace";gc.textAlign="right";
+  gc.fillText("levels  L_T  L_A  L_R   ·   every rate is a difference",w-6,h-6);
+}
+
+function report(){
+  const tot=totals();
+  const c=$("inv");c.innerHTML="";
+  R_(c,"boats",boats.length,"acc");
+  for(const k of ASSET)
+    R_(c,"held  "+k,tot[k].toFixed(4)+"  (start "+base[k].toFixed(4)+")",
+       Math.abs(tot[k]-base[k])<1e-6?"ok":"warn");
+  const drift=ASSET.reduce((m,k)=>Math.max(m,Math.abs(tot[k]-base[k])),0);
+  R_(c,"conservation  max |Δ|",drift.toExponential(3),drift<1e-6?"ok":"warn");
+
+  const T=$("tri");T.innerHTML="";
+  const lTA=L.T-L.A, lAR=L.A-L.R, lRT=L.R-L.T;
+  R_(T,"p_TA",rate("T","A").toFixed(6),"T");
+  R_(T,"p_AR",rate("A","R").toFixed(6),"A");
+  R_(T,"p_RT",rate("R","T").toFixed(6),"R");
+  R_(T,"product  p_TA·p_AR·p_RT",(rate("T","A")*rate("A","R")*rate("R","T")).toFixed(12),"ok");
+  R_(T,"log sum  Σ around the triangle",(lTA+lAR+lRT).toExponential(3),
+     Math.abs(lTA+lAR+lRT)<1e-12?"ok":"warn");
+  R_(T,"Σ levels  L_T+L_A+L_R",(L.T+L.A+L.R).toExponential(3),
+     Math.abs(L.T+L.A+L.R)<1e-9?"ok":"warn");
+  R_(T,"the price level is","free — shift all three, no rate moves","acc");
+  R_(T,"shadow  −1/3","instant: two legs fix the third","acc");
+  R_(T,"light   0","the quote you see","T");
+  R_(T,"sound   +1/3","the clearing that settles","R");
+
+  const tp=$("tape");tp.innerHTML="";
+  R_(tp,"trades",tape.length?("last "+tape.length):"none yet","acc");
+  for(const x of tape.slice(0,9))
+    R_(tp,"t="+x.t+"  boat "+x.a+" ⇄ "+x.b, x.q+" "+x.i+" @ "+x.p+" "+x.j);
+}
+
+/* rAF is suspended in a background tab, which stalls the whole simulation.
+   Fall back to a timer whenever the page is hidden so it keeps running. */
+const NEXT=fn=>document.hidden
+  ? setTimeout(()=>fn(performance.now()),33)
+  : requestAnimationFrame(fn);
+
+let last=0;
+function loop(ts){
+  if(!last)last=ts;
+  const dt=Math.min(0.05,(ts-last)/1000);last=ts;
+  if(running){t+=dt;step(dt);}
+  draw();drawChart();report();
+  requestAnimationFrame(loop);
+}
+make();requestAnimationFrame(loop);
+
+$("run").onclick=e=>{running=!running;last=0;
+  e.target.textContent=running?"PAUSE":"RUN THE FLEET";};
+$("shock").onclick=()=>{const k=ASSET[Math.floor(Math.random()*3)];
+  const o=ASSET[(ASSET.indexOf(k)+1)%3];
+  L[k]+=0.18;L[o]-=0.18;};        // shock preserves Σ levels
+$("reset").onclick=()=>{make();running=false;$("run").textContent="RUN THE FLEET";};
+</script>

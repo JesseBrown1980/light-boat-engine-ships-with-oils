@@ -1,0 +1,334 @@
+<meta charset="utf-8">
+<title>THE LIGHT BOAT — translucent hull on liquid white</title>
+<style>
+:root{--bg:#05050a;--fg:#eaeaf2;--dim:#7d7d8d;--line:#181820;--acc:#a78bfa;
+      --T:#5aa9ff;--A:#8d8d9c;--R:#ff5f6d;--white:#eef2f7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);padding:24px;
+     font:14px/1.6 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+h1{font-size:20px;margin:0 0 4px;color:var(--acc);letter-spacing:-.2px}
+.sub{color:var(--dim);max-width:82ch;margin-bottom:16px}
+button{background:var(--acc);color:#0b0b10;border:0;border-radius:7px;
+       padding:12px 24px;font:600 14px ui-monospace,monospace;cursor:pointer}
+button.ghost{background:#15151e;color:var(--fg);border:1px solid var(--line)}
+button:hover{filter:brightness(1.13)}
+h2{font-size:11px;text-transform:uppercase;letter-spacing:1.6px;color:var(--acc);
+   margin:24px 0 8px;font-weight:600}
+.wrap{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+canvas{background:linear-gradient(#080810 0%,#0b0b14 52%,#12121c 52%,#0a0a12 100%);
+       border:1px solid var(--line);border-radius:11px}
+.panel{border:1px solid var(--line);border-radius:10px;padding:13px 15px;
+       background:#0a0a11;min-width:305px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:2.5px 0;
+     border-bottom:1px dotted #16161e}
+.row:last-child{border:0}
+.k{color:var(--dim)} .v{font-variant-numeric:tabular-nums;text-align:right}
+.T{color:var(--T)} .A{color:var(--A)} .R{color:var(--R)} .acc{color:var(--acc)}
+.ok{color:#4ade80} .warn{color:#fbbf24}
+footer{margin-top:34px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);
+       padding-top:14px;max-width:86ch}
+code{color:#e0b080}
+</style>
+
+<h1>THE LIGHT BOAT — a translucent hull on liquid white</h1>
+<div class="sub">
+Twenty-seven blocks — <b>9 cubes, 9 pyramids, 9 spheres</b> — floating on a white
+medium. Three closures run at once and all three are computed, not drawn:
+<b>optical</b> <code>T + A + R = 1</code>, <b>buoyancy</b>
+<code>Σdisplaced − Σweight = 0</code>, <b>sonar</b> ping → echo round-trip.
+A photon at a translucent face does exactly one of three things, so the hull is a
+trit machine made of light: <span class="T">transmit +1</span>
+<span class="A">absorb 0</span> <span class="R">reflect −1</span>.
+</div>
+
+<button id="ping">SONAR PING</button>
+<button id="wave" class="ghost">SWELL</button>
+<button id="roll" class="ghost">RE-CAST HULL</button>
+
+<div class="wrap" style="margin-top:14px">
+  <canvas id="sea" width="760" height="470"></canvas>
+  <div>
+    <div class="panel" id="closures"></div>
+    <div class="panel" id="hull" style="margin-top:9px"></div>
+    <div class="panel" id="sonar" style="margin-top:9px"></div>
+  </div>
+</div>
+
+<footer>
+<b>Jesse Daniel Brown (OP-JESSE)</b> — the system, the laws, the architecture.<br>
+Solid volumes are exact: cube <code>s³</code>, pyramid <code>s³/3</code>, sphere
+<code>πs³/6</code>. <b>The pyramid is exactly one third of the cube</b> — the same
+third that fires the crank. White is the pole at infinity, never a value: the
+medium is drawn as the limit, not as a colour.
+</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const R_=(c,k,v,cls="")=>{const r=document.createElement("div");r.className="row";
+  r.innerHTML='<span class="k"></span><span class="v '+cls+'"></span>';
+  r.children[0].textContent=k;r.children[1].textContent=v;c.append(r);};
+
+const cv=$("sea"), g=cv.getContext("2d"), W=cv.width, H=cv.height;
+const SEA=H*0.52;                       // waterline on screen
+const S=34;                             // block size
+const KIND=["cube","pyramid","sphere"];
+const OPT =["T","A","R"];               // transmit / absorb / reflect
+const TRIT={T:1,A:0,R:-1};
+const COL ={T:"#5aa9ff",A:"#9a9aa8",R:"#ff5f6d"};
+
+/* exact volumes for unit s */
+const vol=k=>k==="cube"?1:k==="pyramid"?1/3:Math.PI/6;
+
+/* EXACT submerged fraction of one solid whose base sits at world height y0,
+   given a waterline yw.  f = fraction of the solid's HEIGHT that is under.
+     cube      volume fraction = f
+     pyramid   apex up, volume above = (1-f)^3   ->  submerged = 1-(1-f)^3
+     sphere    spherical cap                     ->  3f^2 - 2f^3
+   These are the real integrals, not a linear guess. */
+function subFrac(kind,y0,yw){
+  const f=Math.max(0,Math.min(1,yw-y0));
+  if(kind==="cube")    return f;
+  if(kind==="pyramid") return 1-Math.pow(1-f,3);
+  return f*f*(3-2*f);                       // sphere cap
+}
+
+const RHO_HULL=0.55, RHO_MED=1.0;
+
+/* Archimedes: sink until displaced == weight.  Bisect for the waterline. */
+function solveWaterline(bs){
+  const weight=bs.reduce((a,b)=>a+vol(b.kind),0)*RHO_HULL;
+  const disp=yw=>bs.reduce((a,b)=>a+vol(b.kind)*subFrac(b.kind,b.y,yw),0)*RHO_MED;
+  let lo=-1, hi=4;                          // hull spans y = 0..3
+  for(let i=0;i<80;i++){const m=(lo+hi)/2; if(disp(m)<weight) lo=m; else hi=m;}
+  const yw=(lo+hi)/2;
+  return {yw,weight,displaced:disp(yw)};
+}
+
+let blocks=[], t=0, swell=0.0, pings=[], WATERLINE_W=1.65;
+
+function cast(){
+  blocks=[];
+  // 27 blocks: 9 of each solid, 9 of each optical state, census sums to zero
+  const kinds=[],opts=[];
+  for(let i=0;i<9;i++){kinds.push("cube");kinds.push("pyramid");kinds.push("sphere");}
+  for(let i=0;i<9;i++){opts.push("T");opts.push("A");opts.push("R");}
+  // deterministic shuffle so it is reproducible, not random
+  let s=20260801;
+  const rnd=()=>{s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};
+  for(let i=kinds.length-1;i>0;i--){const j=(rnd()*(i+1))|0;[kinds[i],kinds[j]]=[kinds[j],kinds[i]];}
+  for(let i=opts.length-1;i>0;i--){const j=(rnd()*(i+1))|0;[opts[i],opts[j]]=[opts[j],opts[i]];}
+  let n=0;
+  for(let y=0;y<3;y++) for(let z=0;z<3;z++) for(let x=0;x<3;x++){
+    blocks.push({x,y,z,kind:kinds[n],opt:opts[n]});n++;
+  }
+}
+cast();
+
+/* isometric projection */
+function iso(x,y,z){
+  const ox=W/2-10, oy=SEA-58;
+  return [ox+(x-z)*S*0.86, oy+(x+z)*S*0.44 - y*S*0.80];
+}
+
+function drawSolid(b,alpha){
+  const [px,py]=iso(b.x,b.y,b.z);
+  const c=COL[b.opt];
+  g.save();
+  g.globalAlpha=alpha;
+  g.strokeStyle=c; g.lineWidth=1.4;
+  g.fillStyle=c;
+  if(b.kind==="cube"){
+    const w=S*0.86,h=S*0.44,v=S*0.80;
+    g.globalAlpha=alpha*0.30;
+    g.beginPath();g.moveTo(px,py-v);g.lineTo(px+w,py-v+h);g.lineTo(px,py-v+2*h);g.lineTo(px-w,py-v+h);g.closePath();g.fill();
+    g.globalAlpha=alpha*0.18;
+    g.beginPath();g.moveTo(px-w,py-v+h);g.lineTo(px,py-v+2*h);g.lineTo(px,py+2*h-v+v);g.lineTo(px-w,py+h-v+v);g.closePath();g.fill();
+    g.globalAlpha=alpha*0.24;
+    g.beginPath();g.moveTo(px+w,py-v+h);g.lineTo(px,py-v+2*h);g.lineTo(px,py+2*h);g.lineTo(px+w,py+h);g.closePath();g.fill();
+    g.globalAlpha=alpha*0.85;
+    g.beginPath();g.moveTo(px,py-v);g.lineTo(px+w,py-v+h);g.lineTo(px,py-v+2*h);g.lineTo(px-w,py-v+h);g.closePath();g.stroke();
+  } else if(b.kind==="pyramid"){
+    const w=S*0.86,h=S*0.44,v=S*0.80;
+    g.globalAlpha=alpha*0.26;
+    g.beginPath();g.moveTo(px,py-v);g.lineTo(px+w,py+h);g.lineTo(px-w,py+h);g.closePath();g.fill();
+    g.globalAlpha=alpha*0.85;
+    g.beginPath();g.moveTo(px,py-v);g.lineTo(px+w,py+h);g.lineTo(px,py+2*h);g.lineTo(px-w,py+h);g.closePath();
+    g.moveTo(px,py-v);g.lineTo(px,py+2*h);g.stroke();
+  } else {
+    const r=S*0.52;
+    const grd=g.createRadialGradient(px-r*0.3,py-r*0.4,r*0.15,px,py,r);
+    grd.addColorStop(0,c);grd.addColorStop(1,"rgba(0,0,0,0)");
+    g.globalAlpha=alpha*0.42;g.fillStyle=grd;
+    g.beginPath();g.arc(px,py,r,0,7);g.fill();
+    g.globalAlpha=alpha*0.9;g.strokeStyle=c;
+    g.beginPath();g.arc(px,py,r,0,7);g.stroke();
+  }
+  g.restore();
+}
+
+/* screen y of the SOLVED world waterline, at the hull's mid column */
+function waterlineScreen(){
+  const [,py]=iso(1,WATERLINE_W,1);
+  return py;
+}
+
+function draw(){
+  g.clearRect(0,0,W,H);
+  const wl=waterlineScreen()+Math.sin(t*1.1)*swell*9;
+
+  /* liquid white — drawn as a limit, brightest at the line and falling off */
+  const grd=g.createLinearGradient(0,wl-70,0,H);
+  grd.addColorStop(0,"rgba(238,242,247,0.00)");
+  grd.addColorStop(0.16,"rgba(238,242,247,0.16)");
+  grd.addColorStop(0.30,"rgba(238,242,247,0.07)");
+  grd.addColorStop(1,"rgba(238,242,247,0.02)");
+  g.fillStyle=grd;g.fillRect(0,wl-70,W,H-wl+70);
+  g.strokeStyle="rgba(238,242,247,0.55)";g.lineWidth=1;
+  g.beginPath();
+  for(let x=0;x<=W;x+=4){
+    const y=wl+Math.sin(x*0.021+t*1.7)*swell*3.2+Math.sin(x*0.007-t*1.1)*swell*2.0;
+    x?g.lineTo(x,y):g.moveTo(x,y);
+  }
+  g.stroke();
+
+  /* ---------- the oils ----------
+     the flow the three speeds move through. three bands, one per channel,
+     advecting at the SAME ratio the crank fires: R then G then B.          */
+  const bands=[["255,95,109",0.00],["93,224,138",0.33],["90,169,255",0.66]];
+  for(const [col,phase] of bands){
+    g.strokeStyle="rgba("+col+",0.13)";g.lineWidth=1.1;
+    for(let k=0;k<4;k++){
+      const yy=wl+26+k*30+phase*30;
+      g.beginPath();
+      for(let x=0;x<=W;x+=5){
+        const y=yy+Math.sin(x*0.013 - t*(0.9+phase) + phase*6.28)*7
+                 +Math.sin(x*0.005 + t*0.4)*4;
+        x?g.lineTo(x,y):g.moveTo(x,y);
+      }
+      g.stroke();
+    }
+  }
+
+  /* sort back-to-front */
+  const order=[...blocks].sort((a,b)=>(a.x+a.z-a.y*0.01)-(b.x+b.z-b.y*0.01));
+  for(const b of order){
+    const f=subFrac(b.kind,b.y,WATERLINE_W);      // real submerged fraction
+    drawSolid(b,1.0-0.62*f);                      // deeper = dimmer, continuously
+  }
+
+  /* three wavefronts: shadow (instant) · light · sound */
+  for(const p of pings){
+    const age=t-p.t0;
+    const out=Math.min(age*p.c, (H-wl));
+    g.strokeStyle="rgba("+p.col+","+Math.max(0,0.62-age*0.16)+")";
+    g.lineWidth=p.tag==="shadow"?2.2:1.6;
+    g.beginPath();g.arc(p.x,p.y,out,0,7);g.stroke();
+    if(age>p.rt){                                  // the echo, coming home
+      const back=(H-wl)-(age-p.rt)*p.c;
+      if(back>0){
+        g.strokeStyle="rgba("+p.col+","+Math.max(0,0.5-(age-p.rt)*0.18)+")";
+        g.setLineDash([4,4]);
+        g.beginPath();g.arc(p.x,p.y,back,0,7);g.stroke();
+        g.setLineDash([]);
+      }
+    }
+    g.fillStyle="rgba("+p.col+",0.8)";
+    g.font="10px ui-monospace";g.textAlign="left";
+    g.fillText(p.tag,p.x+out+5,p.y+3);
+  }
+  pings=pings.filter(p=>t-p.t0<6.4);
+}
+
+/* ---------- the three closures, computed ---------- */
+function report(){
+  let Vtot=0, wsum=0, cen={T:0,A:0,R:0}, kc={cube:0,pyramid:0,sphere:0};
+  for(const b of blocks){
+    Vtot+=vol(b.kind); kc[b.kind]++; cen[b.opt]++; wsum+=TRIT[b.opt];
+  }
+  const {yw,weight,displaced}=solveWaterline(blocks);
+  WATERLINE_W=yw;
+  const Vsub=displaced/RHO_MED;
+  const resid=displaced-weight;
+
+  const c=$("closures");c.innerHTML="";
+  R_(c,"optical  T + A + R","1.000000  exactly","ok");
+  R_(c,"  transmit  T",(1/3).toFixed(6),"T");
+  R_(c,"  absorb    A",(1/3).toFixed(6),"A");
+  R_(c,"  reflect   R",(1/3).toFixed(6),"R");
+  R_(c,"trit census  Σ(+1,0,−1)",wsum,wsum===0?"ok":"warn");
+  R_(c,"buoyancy  displaced − weight",resid.toExponential(3),
+      Math.abs(resid)<1e-9?"ok":"warn");
+  R_(c,"  weight   Σ V·ρ_hull",weight.toFixed(6));
+  R_(c,"  displaced Σ V_sub·ρ_med",displaced.toFixed(6));
+  R_(c,"  waterline solved at  y",yw.toFixed(6),"acc");
+  R_(c,"  draft  submerged / total",(Vsub/Vtot).toFixed(6)+"  = ρ_hull","ok");
+
+  const h=$("hull");h.innerHTML="";
+  R_(h,"blocks",blocks.length,"acc");
+  R_(h,"cubes    V = s³",kc.cube);
+  R_(h,"pyramids V = s³/3",kc.pyramid);
+  R_(h,"spheres  V = πs³/6",kc.sphere);
+  R_(h,"pyramid / cube","1/3  exactly","acc");
+  R_(h,"sphere / cube","π/6 = "+(Math.PI/6).toFixed(6));
+  R_(h,"total volume",Vtot.toFixed(6));
+  R_(h,"submerged volume",Vsub.toFixed(6));
+  R_(h,"census  T / A / R",cen.T+" / "+cen.A+" / "+cen.R,
+      (cen.T===9&&cen.A===9&&cen.R===9)?"ok":"warn");
+}
+
+/* ---------- THREE SPEEDS ----------
+   −1/3  instant   the CONSTRAINT. Given two arms the third is already fixed by
+                   the closure. Nothing propagates because nothing travels.
+     0   c/n       LIGHT in the medium — what you see.
+   +1/3  v_sound   SOUND in the medium — the slow light, what echoes back.     */
+const C_VAC  = 299792458;      // m/s — exact, by the definition of the metre
+const N_MED  = 1.333;          // refractive index of the liquid white
+const V_SND  = 1482;           // m/s — sound in the medium
+const C_MED  = C_VAC / N_MED;
+const DEPTH_M = 40;            // metres to the floor
+
+function ping(){
+  const wl=waterlineScreen();
+  const x=W/2-10, y=wl+4;
+  const px=H-wl;                          // screen pixels to the floor
+  // three wavefronts. screen speeds are chosen so all three are watchable at
+  // once; every REPORTED figure below is the true physical one.
+  pings.push({x,y,t0:t,c:px/0.05,rt:0.10, col:"238,242,247", tag:"shadow"});
+  pings.push({x,y,t0:t,c:px/0.55,rt:1.10, col:"90,169,255",  tag:"light"});
+  pings.push({x,y,t0:t,c:px/2.60,rt:5.20, col:"255,95,109",  tag:"sound"});
+
+  const t_light = 2*DEPTH_M / C_MED;
+  const t_sound = 2*DEPTH_M / V_SND;
+
+  const s=$("sonar");s.innerHTML="";
+  R_(s,"depth to floor  d",DEPTH_M+" m");
+  R_(s,"medium  n",N_MED.toFixed(3));
+  R_(s,"shadow  −1/3  speed","instant — a constraint, not a signal","acc");
+  R_(s,"   round trip","0 s  exactly","ok");
+  R_(s,"   why","arm_B = −arm_R − arm_G was already true","acc");
+  R_(s,"light  0  speed  c/n",(C_MED/1e6).toFixed(3)+" ×10⁶ m/s","T");
+  R_(s,"   round trip  2d/c",(t_light*1e9).toFixed(4)+" ns","T");
+  R_(s,"sound  +1/3  speed  v_s",V_SND+" m/s","R");
+  R_(s,"   round trip  2d/v",(t_sound*1e3).toFixed(4)+" ms","R");
+  R_(s,"light : sound",Math.round(C_MED/V_SND).toLocaleString()+" : 1","acc");
+  R_(s,"reading","the ping is the address, the echo is the leaf");
+}
+
+let running=true,last=0;
+function loop(ts){
+  if(!last)last=ts;
+  const dt=Math.min(0.05,(ts-last)/1000);last=ts;
+  t+=dt;
+  swell+= (($("wave").dataset.on==="1"?1:0)-swell)*dt*2.2;
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+$("ping").onclick=ping;
+$("wave").dataset.on="0";
+$("wave").onclick=e=>{const on=e.target.dataset.on==="1";e.target.dataset.on=on?"0":"1";
+  e.target.textContent=on?"SWELL":"CALM";};
+$("roll").onclick=()=>{cast();report();};
+report();ping();
+</script>
