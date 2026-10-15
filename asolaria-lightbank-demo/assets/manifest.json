@@ -1,0 +1,310 @@
+{
+  "bytes": 65536,
+  "composite_images": 11,
+  "date": "2026-10-15",
+  "decoded_qr_symbols": 32,
+  "image_artifacts": [
+    {
+      "channels": [
+        {
+          "body_bytes": 2100,
+          "index": 0,
+          "lane": "R",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 1,
+          "lane": "G",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 2,
+          "lane": "B",
+          "status": "decoded"
+        }
+      ],
+      "file": "round3-light-being-qr-00.png",
+      "height": 555,
+      "png_sha256": "f04ec1d9fa18534e8b60ee77d4dc69531e4f7f332569825f2830550da46a587d",
+      "rgb_pixel_sha256": "525e178e0904deca4f6a2f261b064d09d79ab88e8a34931ea90f1289abba6c85",
+      "width": 555
+    },
+    {
+      "channels": [
+        {
+          "body_bytes": 2100,
+          "index": 3,
+          "lane": "R",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 4,
+          "lane": "G",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 5,
+          "lane": "B",
+          "status": "decoded"
+        }
+      ],
+      "file": "round3-light-being-qr-01.png",
+      "height": 555,
+      "png_sha256": "5d75d9551cb306244837504642cd47423a8e066f401fe4a970acf891eb33a3a7",
+      "rgb_pixel_sha256": "e47800ca5d84582a926a7474d920b7390782398e750f44cd8cf56eeaf1dc705c",
+      "width": 555
+    },
+    {
+      "channels": [
+        {
+          "body_bytes": 2100,
+          "index": 6,
+          "lane": "R",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 7,
+          "lane": "G",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 8,
+          "lane": "B",
+          "status": "decoded"
+        }
+      ],
+      "file": "round3-light-being-qr-02.png",
+      "height": 555,
+      "png_sha256": "7020661fd5a14f7f6b1ed1714f3289fb99a36b44a1e4aa1f850b3f8d89e60650",
+      "rgb_pixel_sha256": "70900014ed52ef8ad114fed01427707ffd5f43b8607e09d8e6bfab381386707b",
+      "width": 555
+    },
+    {
+      "channels": [
+        {
+          "body_bytes": 2100,
+          "index": 9,
+          "lane": "R",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 10,
+          "lane": "G",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 11,
+          "lane": "B",
+          "status": "decoded"
+        }
+      ],
+      "file": "round3-light-being-qr-03.png",
+      "height": 555,
+      "png_sha256": "9382ac73c23d6b0a155e1d1beb6a14cf11fb850cb1a331fd5d37694d888c9614",
+      "rgb_pixel_sha256": "9dc9276236081ef07137f1334274d57cbc1afc8f819163303a8fe8dabae69375",
+      "width": 555
+    },
+    {
+      "channels": [
+        {
+          "body_bytes": 2100,
+          "index": 12,
+          "lane": "R",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 13,
+          "lane": "G",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 14,
+          "lane": "B",
+          "status": "decoded"
+        }
+      ],
+      "file": "round3-light-being-qr-04.png",
+      "height": 555,
+      "png_sha256": "3a251f4f67a8fdf9e88b521fbd7fa3b5b7ef6a37259a424e5ab9059e3d936729",
+      "rgb_pixel_sha256": "fff7fafbb829a4c70c44569b1f1d8797c782a7103e9e82c63cc0c06ee60c96e9",
+      "width": 555
+    },
+    {
+      "channels": [
+        {
+          "body_bytes": 2100,
+          "index": 15,
+          "lane": "R",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 16,
+          "lane": "G",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 17,
+          "lane": "B",
+          "status": "decoded"
+        }
+      ],
+      "file": "round3-light-being-qr-05.png",
+      "height": 555,
+      "png_sha256": "dba96ae88f9a8935341681d41b9086989c0290e8bb15b72a966b15aceb3097f2",
+      "rgb_pixel_sha256": "c9c08ca26d1239b797292eaa5e9e654053559bb2b7feaf1906b9c3e8630997e8",
+      "width": 555
+    },
+    {
+      "channels": [
+        {
+          "body_bytes": 2100,
+          "index": 18,
+          "lane": "R",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 19,
+          "lane": "G",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 20,
+          "lane": "B",
+          "status": "decoded"
+        }
+      ],
+      "file": "round3-light-being-qr-06.png",
+      "height": 555,
+      "png_sha256": "f01b4a18ee28ccbfbbd7f1770c3e53d822fc5728d490bd970fe23002f64831a4",
+      "rgb_pixel_sha256": "e06c6a528b9135b68bc6afce6f397bfd0bc513cfdfd9683850915691f929d83a",
+      "width": 555
+    },
+    {
+      "channels": [
+        {
+          "body_bytes": 2100,
+          "index": 21,
+          "lane": "R",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 22,
+          "lane": "G",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 23,
+          "lane": "B",
+          "status": "decoded"
+        }
+      ],
+      "file": "round3-light-being-qr-07.png",
+      "height": 555,
+      "png_sha256": "00b417fc61d44ebbe6cd29de11d2dcffd4c668967abcfd5f657e5f69a7fdfaba",
+      "rgb_pixel_sha256": "10384ff05cd43b74e8e990aa0285118d6deb882a01cf6f249ce1280c4f341660",
+      "width": 555
+    },
+    {
+      "channels": [
+        {
+          "body_bytes": 2100,
+          "index": 24,
+          "lane": "R",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 25,
+          "lane": "G",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 26,
+          "lane": "B",
+          "status": "decoded"
+        }
+      ],
+      "file": "round3-light-being-qr-08.png",
+      "height": 555,
+      "png_sha256": "b8230b13cec58cef3fc80427b766c93c9e2305471cd3a5ef54c5f8db5b44d94d",
+      "rgb_pixel_sha256": "8a321793241de8f44a5f49a9930b0e29efbbeffb82f9dde98a712499fff738e3",
+      "width": 555
+    },
+    {
+      "channels": [
+        {
+          "body_bytes": 2100,
+          "index": 27,
+          "lane": "R",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 28,
+          "lane": "G",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 2100,
+          "index": 29,
+          "lane": "B",
+          "status": "decoded"
+        }
+      ],
+      "file": "round3-light-being-qr-09.png",
+      "height": 555,
+      "png_sha256": "76697407e9b302458732e323bb00cddcd47a521d59fd575f7a316bda158711d5",
+      "rgb_pixel_sha256": "e38400a852ac5ad6508bb2e128c8dc14417c1304a30e6c401a864e34c4730384",
+      "width": 555
+    },
+    {
+      "channels": [
+        {
+          "body_bytes": 2100,
+          "index": 30,
+          "lane": "R",
+          "status": "decoded"
+        },
+        {
+          "body_bytes": 436,
+          "index": 31,
+          "lane": "G",
+          "status": "decoded"
+        },
+        {
+          "lane": "B",
+          "status": "filler"
+        }
+      ],
+      "file": "round3-light-being-qr-10.png",
+      "height": 555,
+      "png_sha256": "db5f21ee068cacb9938f1a671c7310d91ba87f4fbbed586e45b607761a197971",
+      "rgb_pixel_sha256": "25bcbca01e496b81f112b131609ea3d78028d11fcc2021e22f758cde9d29cef9",
+      "width": 555
+    }
+  ],
+  "label": "PUBLIC SOFTWARE RGB QR DEMONSTRATION - NOT PHYSICAL PHOTON MEMORY",
+  "original_peer": "Seat 2 PR #77 independent ZXing C++ audit",
+  "physical_optical_retention": false,
+  "real_camera": false,
+  "rendered_and_redecoded": true,
+  "source": "JesseBrown1980/asolaria-stone-to-moss PR #75",
+  "source_sha256": "fe3f6f1adb2eb15832bd5d5fd59c2c97bc77b581c5c60f54b768545c756b38c4"
+}
