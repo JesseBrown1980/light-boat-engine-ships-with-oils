@@ -1,0 +1,56 @@
+name: Publish Asolaria verified light-bank demo assets
+on:
+  push:
+    branches: [main]
+    paths:
+      - asolaria-lightbank-demo/mirror_verified_qr.py
+      - .github/workflows/publish-asolaria-lightbank-demo.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  reproduce-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check browser JavaScript syntax
+        run: node --check asolaria-lightbank-demo/app.js
+      - name: Install actual QR writer and independent ZBar pixel reader
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libzbar0
+          python -m pip install --disable-pip-version-check qrcode==8.2 Pillow==12.0.0 pyzbar==0.1.9
+      - name: Reproduce all 11 pinned historical PNGs and decode every plane
+        run: |
+          python asolaria-lightbank-demo/mirror_verified_qr.py
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          p=Path('asolaria-lightbank-demo/assets')
+          m=json.loads((p/'manifest.json').read_text())
+          assert m['decoded_qr_symbols']==32 and m['composite_images']==11
+          data=(p/'round3-synthetic-fixture.bin').read_bytes()
+          assert hashlib.sha256(data).hexdigest()=='fe3f6f1adb2eb15832bd5d5fd59c2c97bc77b581c5c60f54b768545c756b38c4'
+          assert m['real_camera'] is False and m['physical_optical_retention'] is False
+          print('PASS: 11 full-size RGB images, 32/32 separately decoded QR, 65536 bytes')
+          PY
+      - name: Commit only the mirrored, verified public gallery assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add asolaria-lightbank-demo/assets/
+          if ! git diff --cached --quiet; then
+            git commit -m "demo: mirror byte-checked October 15 colour QR frames and public fixture"
+            git push origin HEAD:main
+          fi
