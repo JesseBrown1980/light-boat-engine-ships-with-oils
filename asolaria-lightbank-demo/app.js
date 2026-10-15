@@ -186,5 +186,10 @@ function initGallery(){
 }
 function initTabs(){
  document.querySelectorAll("[data-scroll]").forEach(el=>el.addEventListener("click",()=>$(el.dataset.scroll).scrollIntoView({behavior:"smooth"})));
+ const hero=document.querySelector(".hero-actions [data-scroll='memory']");
+ if(hero)hero.addEventListener("click",async()=>{
+   if(!payload)await initBank();
+   if(payload)await recover();
+ });
 }
 document.addEventListener("DOMContentLoaded",()=>{initBankEvents();initRainbow();initModel();initGallery();initTabs();});
