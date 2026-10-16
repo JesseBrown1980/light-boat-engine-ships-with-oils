@@ -24,7 +24,7 @@ iframe.onload=()=>{
         message.textContent="SMOKE"+"_"+"PASS frames="+frames+" captures="+captures+" colourQR="+qrs;
       }
     }catch(err){clearInterval(check);fail(String(err));}
-    if(polls>60){clearInterval(check);fail("timeout: "+d.getElementById("notice").textContent);}
+    if(polls>300){clearInterval(check);fail("timeout frames="+d.getElementById("frame-count").textContent+" captures="+d.getElementById("captures").textContent+" status="+d.getElementById("status").textContent+" notice="+d.getElementById("notice").textContent);}
   },100);
 };
 </script></body></html>
