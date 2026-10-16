@@ -17,7 +17,7 @@ async function main(){
       {type:"application/fits"}));
   input.files=selection.files;
   input.dispatchEvent(new Event("change",{bubbles:true}));
-  let polls=0;
+  let polls=0,requestedPreviews=false;
   const check=setInterval(()=>{
     polls++;
     const mode=d.getElementById("mode").textContent;
@@ -29,6 +29,9 @@ async function main(){
     const captures=Number(d.getElementById("snapshots").textContent);
     const frames=Number(d.getElementById("painted").textContent);
     const leaves=Number(d.getElementById("leaf-count").textContent);
+    if(captures>=1&&!requestedPreviews){
+      d.getElementById("show-qr").click();requestedPreviews=true;
+    }
     const qrs=d.querySelectorAll("#qr-list canvas").length;
     if(frames>=3&&captures>=1&&leaves>0&&qrs>0){
       d.getElementById("stop").click();
