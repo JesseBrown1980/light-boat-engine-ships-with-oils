@@ -1,0 +1,21 @@
+name: Fleet continuous loop and Centauri navigation
+on:
+  push:
+    branches: ["seat5/fleet-continuity-centauri-link"]
+  pull_request:
+    paths:
+      - "index.html"
+      - "tests/fleet-continuity.test.mjs"
+      - ".github/workflows/fleet-continuity.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fleet-static-safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node --test tests/fleet-continuity.test.mjs
