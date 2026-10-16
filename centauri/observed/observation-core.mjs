@@ -70,7 +70,7 @@ export function buildTape(frames,{maxLeaves=243,maxShiftPx=25}={}){
     if(!last)continue;
     tracks.push({positions:[pair.a,pair.b,last].map(x=>[x.x,x.y,x.intensityBin])});
   }
-  const timestamps=frames.map(f=>f.dateObs||null);
+  const timestamps=frames.map(f=>f.dateObs||f.metadata?.dateObs||null);
   const numeric=timestamps.map(x=>x?Date.parse(x):NaN);
   const temporal= numeric.every(Number.isFinite)&&numeric[0]<numeric[1]&&numeric[1]<numeric[2];
   return {
