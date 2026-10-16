@@ -1,0 +1,30 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Centauri browser smoke</title>
+<style>body{font:16px monospace}iframe{width:1000px;height:700px;border:0}pre{font-weight:bold}</style></head>
+<body><h1>Centauri live browser smoke</h1><pre id="result">WAITING</pre>
+<iframe id="experiment" src="./index.html"></iframe>
+<script>
+const message=document.getElementById("result"),iframe=document.getElementById("experiment");
+function fail(why){message.textContent="SMOKE"+"_"+ "FAIL "+why;}
+iframe.onload=()=>{
+  const d=iframe.contentDocument;
+  try{d.getElementById("start").click();}catch(err){fail("start "+err);return;}
+  let polls=0;
+  const check=setInterval(()=>{
+    polls++;
+    try{
+      const frames=Number(d.getElementById("frame-count").textContent);
+      const captures=Number(d.getElementById("captures").textContent);
+      const qrs=d.querySelectorAll("#qr-list canvas").length;
+      if(frames>2&&captures>0&&qrs>0){
+        const qr=d.querySelector("#qr-list canvas");
+        if(qr.width<200)throw Error("QR canvas too small");
+        d.getElementById("stop").click();
+        if(d.getElementById("status").textContent!=="STOPPED")throw Error("stop failed");
+        clearInterval(check);
+        message.textContent="SMOKE"+"_"+"PASS frames="+frames+" captures="+captures+" colourQR="+qrs;
+      }
+    }catch(err){clearInterval(check);fail(String(err));}
+    if(polls>60){clearInterval(check);fail("timeout: "+d.getElementById("notice").textContent);}
+  },100);
+};
+</script></body></html>
