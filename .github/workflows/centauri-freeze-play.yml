@@ -1,0 +1,47 @@
+name: Centauri continuous freeze-play and colour QR verification
+on:
+  push:
+    branches: ["seat5/centauri-freeze-play-nonblocking"]
+  pull_request:
+    paths:
+      - "centauri/**"
+      - "vendor/qrgen*"
+      - ".github/workflows/centauri-freeze-play.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independent-core-and-qr:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Parse module source
+        run: |
+          node --check centauri/core.mjs
+          node --check centauri/app.mjs
+          node --check centauri/capture-worker.mjs
+      - name: Run deterministic, QR generator and tamper tests
+        run: node --test centauri/core.test.mjs
+      - name: Ensure no frame awaits encoding or digest
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('centauri/app.mjs').read_text()
+          tick=src.split('function tick(now){',1)[1].split('get("start").onclick',1)[0]
+          assert 'await ' not in tick and 'readPixels(' not in tick
+          assert 'fetch(' not in tick and 'toBlob(' not in tick
+          assert 'nextCaptureAt' in tick and 'schedule();' in tick
+          assert 'Math.floor(elapsed/INTERVAL_SECONDS)' in tick
+          assert 'new Worker(' in src
+          assert 'requestAnimationFrame(tick)' in src
+          assert 'setTimeout(()=>tick(performance.now()),250)' in src
+          print('NONBLOCKING_FRAME_LOOP_STATIC_GATE_PASS')
+          PY
