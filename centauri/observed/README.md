@@ -6,7 +6,7 @@ This mode corrects the earlier proposal to enumerate simulated particles: **meas
 
 Visit /centauri/observed/ in GitHub Pages, load exactly three independently acquired FITS exposures of the **same sky field**, in chronological order, and click **START · PLAY UNTIL STOP**. The player continuously replays the three measured frames (forward and reverse) until **STOP** is clicked. No timer ends the run.
 
-The main callback composites predecoded source imagery on a canvas and projects at most 243 matched bright leaf addresses. Source FITS ingestion, quantization, raw-file SHA-256, QR encoding and receipts all happen in a separate Web Worker. The 600-second checkpoint is a *snapshot cadence*, not a stopping condition; a worker-busy capture is skipped rather than obstructing a display frame.
+The main callback composites predecoded source imagery on a canvas and projects at most 243 matched bright leaf addresses. Source FITS ingestion, quantization, raw-file SHA-256, QR encoding and receipts all happen in a separate Web Worker. QR previews are **not** drawn automatically during playback; request them explicitly with SHOW QR PREVIEWS, which paints one image at a time in browser idle slots. The 600-second checkpoint is a *snapshot cadence*, not a stopping condition; a worker-busy capture is skipped rather than obstructing a display frame.
 
 ## Representation
 
