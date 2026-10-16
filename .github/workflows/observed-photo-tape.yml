@@ -1,0 +1,68 @@
+name: Centauri observed raw FITS -> leaf tape -> colour QR
+on:
+  push:
+    branches: ["seat5/centauri-raw-photo-reprojection"]
+  pull_request:
+    paths:
+      - "centauri/observed/**"
+      - "centauri/index.html"
+      - ".github/workflows/observed-photo-tape.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mathematical-and-transport-referee:
+    name: independent raw-frame replay and QR tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate worker, loader, and UI source syntax
+        run: |
+          node --check centauri/observed/fits.mjs
+          node --check centauri/observed/observation-core.mjs
+          node --check centauri/observed/observation-worker.mjs
+          node --check centauri/observed/player.mjs
+      - name: FITS, independent three-frame tape, reconstruction, and QR negative controls
+        run: node --test centauri/observed/observation.test.mjs
+      - name: Nonblocking UI display gate
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          ui=Path("centauri/observed/player.mjs").read_text()
+          tick=ui.split("function tick(now){",1)[1].split("function download(",1)[0]
+          forbidden=["await ", "readPixels(", "toBlob(", "crypto.subtle", "parseFits(", "normalizeQuantize(", "fetch("]
+          assert not any(term in tick for term in forbidden), [term for term in forbidden if term in tick]
+          assert 'new Worker("./observation-worker.mjs"' in ui
+          assert 'if(document.hidden)' in ui and 'requestAnimationFrame' in ui
+          assert 'pingPongPosition(elapsed,5.3)' in tick
+          assert 'nextCapture' in tick and 'schedule();' in tick
+          print("NONBLOCKING_OBSERVED_REPLAY_LOOP_PASS")
+          PY
+  real-nasa-fits-ingestion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Download public real HST FITS sample direct from NASA archive
+        shell: bash
+        run: |
+          curl --fail --location --retry 2 --max-time 120 \
+            "https://science.data.nasa.gov/sites/default/files/2026-06/hst-wfpc-II-800-800-4.fits" \
+            --output "$RUNNER_TEMP/nasa-hst-real.fits"
+          file "$RUNNER_TEMP/nasa-hst-real.fits"
+          test "$(stat -c '%s' "$RUNNER_TEMP/nasa-hst-real.fits")" -gt 2880
+      - name: Verify raw FITS pixels and source SHA without simulating celestial motion
+        shell: bash
+        run: |
+          node centauri/observed/nasa-fits-smoke.mjs "$RUNNER_TEMP/nasa-hst-real.fits"
