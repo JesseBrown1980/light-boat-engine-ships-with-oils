@@ -29,6 +29,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0a0f1e;padding:12px;
 <button id="start" disabled>START · PLAY UNTIL STOP</button>
 <button id="stop" class="secondary" disabled>STOP</button>
 <button id="freeze" class="secondary" disabled>FREEZE / QR NOW</button>
+<button id="show-qr" class="secondary" disabled>SHOW QR PREVIEWS (ON DEMAND)</button>
 <button id="export" class="secondary" disabled>EXPORT SNAPSHOT RECEIPT</button>
 </div>
 <div id="status" class="notice" role="status" aria-live="polite">Load exactly three FITS observation frames first. No artificial source images are inserted.</div>
@@ -55,7 +56,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0a0f1e;padding:12px;
 <div class="panel"><b>Stack / rotated view B</b><canvas id="stack2" width="420" height="300"></canvas><small>Projection of the same x-y-time stack (yaw 240°)</small></div>
 </div>
 <h2>Frozen colour QR snapshots</h2>
-<p id="qr-info">Press START to play continuously. First snapshot occurs immediately and then approximately every 600 seconds while running. The QR worker does not block the display loop.</p>
+<p id="qr-info">Press START to play continuously. First snapshot occurs immediately and then approximately every 600 seconds while running. The QR worker does not block the display loop. QR previews are drawn only on request.</p>
 <div id="qr-list"></div>
 <h2>Provenance / what is physically established</h2>
 <pre id="provenance">Awaiting three real observations. The repository's older mathematical Centauri fixture remains available separately.</pre>
