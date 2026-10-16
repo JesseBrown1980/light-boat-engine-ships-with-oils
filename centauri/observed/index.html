@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asolaria — Raw Photo Tape / 2D ⇄ 3D ⇄ 2D</title>
+<style>
+:root{color-scheme:dark;--bg:#080917;--card:#10182a;--line:#36445a;--text:#e9f0fc;--sub:#b9c8dd;--light:#89e8bd}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 ui-monospace,monospace;padding:20px}
+main{max-width:1140px;margin:auto}a{color:#8fcdff}h1{font-size:22px;margin:0 0 8px}
+h2{font-size:16px;margin:22px 0 8px}p,small{color:var(--sub)}
+b,strong{color:#fff}.notice{border-left:3px solid var(--light);padding:12px;background:var(--card)}
+.actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:14px 0}
+button,input::file-selector-button{background:#1d594f;border:1px solid #4b9b8f;color:#fff;font:inherit;border-radius:6px;padding:9px;cursor:pointer}
+button.secondary{background:#28354c;border-color:#667b98}
+button:disabled{opacity:.45;cursor:not-allowed}
+.stat{display:inline-block;padding:10px;min-width:125px;background:var(--card);border:1px solid var(--line);border-radius:8px;margin:4px}
+.stat b{display:block;font-size:19px;color:var(--light)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:13px;min-width:0}
+canvas{display:block;width:100%;height:auto;max-height:320px;background:#040512;border-radius:7px;image-rendering:auto}
+.gradient{height:14px;border-radius:10px;background:linear-gradient(90deg,#5a00a8,#6030ee,#245aff,#00a7ee,#00d4ad,#b5eb3a,#ffbf2b,#ff7932,#ed2745)}
+#qr-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.qr{background:#fff;padding:7px;border-radius:8px;color:#111}.qr canvas{image-rendering:pixelated;max-height:none}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0a0f1e;padding:12px;border:1px solid var(--line);border-radius:6px}
+</style></head><body><main>
+<h1>ASOLARIA / Raw Photo Tape</h1>
+<p class="notice">Three **real raw 2D FITS images** form the tape. Each is independently quantized into nine intensity bands. The tape is stacked by observed x, y, and frame time; as it plays, the screen reprojects those measured relationships into new 2D views. No gravitational particle integration or exhaustive point enumeration is used.</p>
+<p>Use three observations of the <b>same field</b> with comparable image geometry, ordered earliest to latest. They must be from different exposures to measure motion. Files stay in your browser; each original is SHA-256 identified. If the photographs are unrelated or lack registration/calibration, the motion reconstruction is a hypothesis and is not evidence of physical depth.</p>
+<div class="actions">
+<input id="files" type="file" accept=".fits,.fit,.fts,application/fits,image/fits" multiple aria-label="Select three chronological raw FITS images">
+<button id="start" disabled>START · PLAY UNTIL STOP</button>
+<button id="stop" class="secondary" disabled>STOP</button>
+<button id="freeze" class="secondary" disabled>FREEZE / QR NOW</button>
+<button id="export" class="secondary" disabled>EXPORT SNAPSHOT RECEIPT</button>
+</div>
+<div id="status" class="notice" role="status" aria-live="polite">Load exactly three FITS observation frames first. No artificial source images are inserted.</div>
+<div>
+<span class="stat">Mode <b id="mode">WAITING</b></span>
+<span class="stat">Elapsed (s) <b id="elapsed">0.0</b></span>
+<span class="stat">Display frames <b id="painted">0</b></span>
+<span class="stat">Observed leaf tracks <b id="leaf-count">0</b></span>
+<span class="stat">QR snapshots <b id="snapshots">0</b></span>
+</div>
+<h2>Three source images — quantized independently</h2>
+<div class="gradient"></div>
+<p>The rainbow here is a **nine-level intensity pseudocolor gradient**. It does not turn a single-filter image into a measured nine-wavelength spectrum. Each file's original filter and observation timestamp remain in the receipt.</p>
+<div class="grid">
+<div class="panel">Raw observation 0 <canvas id="source0" width="420" height="260"></canvas><small id="source-info0">Awaiting FITS</small></div>
+<div class="panel">Raw observation 1 <canvas id="source1" width="420" height="260"></canvas><small id="source-info1">Awaiting FITS</small></div>
+<div class="panel">Raw observation 2 <canvas id="source2" width="420" height="260"></canvas><small id="source-info2">Awaiting FITS</small></div>
+</div>
+<h2>2D photos → x-y-time stack → 2D re-projections</h2>
+<div class="grid">
+<div class="panel"><b>Observed video frame</b><canvas id="playback" width="420" height="300"></canvas><small>Composited directly from the supplied photo frames. No fabricated missing raw pixels.</small></div>
+<div class="panel"><b>Geometric stack / front</b><canvas id="stack0" width="420" height="300"></canvas><small>Projection from sparse observed correspondence (yaw 0°)</small></div>
+<div class="panel"><b>Stack / rotated view A</b><canvas id="stack1" width="420" height="300"></canvas><small>Projection of the same x-y-time stack (yaw 120°)</small></div>
+<div class="panel"><b>Stack / rotated view B</b><canvas id="stack2" width="420" height="300"></canvas><small>Projection of the same x-y-time stack (yaw 240°)</small></div>
+</div>
+<h2>Frozen colour QR snapshots</h2>
+<p id="qr-info">Press START to play continuously. First snapshot occurs immediately and then approximately every 600 seconds while running. The QR worker does not block the display loop.</p>
+<div id="qr-list"></div>
+<h2>Provenance / what is physically established</h2>
+<pre id="provenance">Awaiting three real observations. The repository's older mathematical Centauri fixture remains available separately.</pre>
+<p>Raw image sources: <a href="https://archive.eso.org/eso/eso_archive_main.html">ESO science archive</a> · <a href="https://science.data.nasa.gov/fits/sample-files">NASA FITS sample files</a>. For actual Centauri motion, use three distinct epochs of the same Centauri field, ideally with WCS and calibrated pointing; three arbitrary images cannot establish sky motion.</p>
+<p><a href="../">Return to mathematical Centauri prototype</a> · <a href="../../">The Fleet</a> · <a href="https://jessebrown1980.github.io/the-colour-qr/">The Colour QR decoder</a></p>
+<footer><p>**Disclosure:** This is a real computational replay of user-provided raw observations. The x-y-time volume is three-dimensional in *data coordinates* but is not automatically a 3D physical-depth reconstruction. Playback between recorded epochs is interpolation; the loop back is replay, not a physical prediction. The browser can be suspended by the OS even though there is no user-imposed stop timer.</p></footer>
+</main><script type="module" src="./player.mjs"></script></body></html>
