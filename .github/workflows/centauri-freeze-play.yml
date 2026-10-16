@@ -45,3 +45,30 @@ jobs:
           assert 'setTimeout(()=>tick(performance.now()),250)' in src
           print('NONBLOCKING_FRAME_LOOP_STATIC_GATE_PASS')
           PY
+
+  chromium-ui-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Launch self-contained live browser and verify Start, QR and Stop
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 >/tmp/centauri-server.log 2>&1 &
+          sleep 2
+          CHROME=$(command -v google-chrome || command -v chromium || true)
+          test -n "$CHROME" || { echo "No Chrome browser on runner"; exit 1; }
+          timeout 50 "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage \
+            --disable-gpu --virtual-time-budget=10000 --dump-dom \
+            http://127.0.0.1:8765/centauri/browser-smoke.html \
+            > /tmp/centauri-dom.html 2>/tmp/centauri-chrome.log || {
+              tail -30 /tmp/centauri-chrome.log
+              exit 1
+            }
+          grep -F 'id="result">SMOKE_PASS' /tmp/centauri-dom.html || {
+            grep -E 'id="result"|SMOKE_FAIL' /tmp/centauri-dom.html | tail -8 || true
+            tail -30 /tmp/centauri-chrome.log || true
+            exit 1
+          }
+          echo "BROWSER_START_WORKER_QR_STOP_PASS"
