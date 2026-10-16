@@ -18,6 +18,7 @@ function buttons(){
   $("stop").disabled=!running;
   $("freeze").disabled=!running;
   $("export").disabled=!lastReceipt;
+  $("show-qr").disabled=!lastReceipt;
 }
 function stopSchedule(){
   if(handle===null)return;
@@ -99,9 +100,13 @@ function download(blob,name){
   const url=URL.createObjectURL(blob),a=document.createElement("a");
   a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),15000);
 }
-function drawQR(message){
+async function drawQR(message){
   const target=$("qr-list");target.replaceChildren();
   for(let i=0;i<message.images.length;i++){
+    // The screen owns the animation cadence; draw optional previews only in idle slots.
+    await new Promise(resolve=>typeof requestIdleCallback==="function"
+      ?requestIdleCallback(resolve,{timeout:1500}):setTimeout(resolve,20));
+    if(lastReceipt!==message)return;
     const im=message.images[i],c=document.createElement("canvas");
     const tmp=document.createElement("canvas");tmp.width=tmp.height=im.side;
     tmp.getContext("2d").putImageData(
@@ -157,7 +162,7 @@ async function onWorker(data){
     $("qr-info").textContent="Worker-verified observation projection: "+
       data.manifest.bytes+" B | "+data.manifest.chunks+" indexed QR chunks | SHA-256 "+
       data.manifest.sha256;
-    drawQR(data);buttons();
+    $("qr-list").replaceChildren();buttons();
     status("Tape playback "+(running?"RUNNING":"STOPPED")+
       "; frozen measurement-derived QR receipt "+data.manifest.frameNumber+" saved in memory.");
   }
@@ -195,6 +200,9 @@ $("freeze").onclick=()=>{
   if(!running)return;
   const t=Math.max(0,(performance.now()-elapsedOrigin)/1000);
   capture(pingPongPosition(t,5.3));
+};
+$("show-qr").onclick=()=>{
+  if(lastReceipt)void drawQR(lastReceipt);
 };
 $("export").onclick=()=>{
   if(!lastReceipt)return;
