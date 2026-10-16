@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Asolaria — Centauri Freeze / Play</title>
+<style>
+:root{color-scheme:dark;--bg:#070713;--panel:#111326;--line:#30364f;--fg:#e7e8f4;--dim:#b4bbcf;--a:#86d9fa;--ok:#76edb8}
+*{box-sizing:border-box}body{background:var(--bg);color:var(--fg);font:15px/1.5 ui-monospace,monospace;margin:0;padding:24px}
+main{max-width:1120px;margin:auto}h1{font-size:25px;margin:0 0 8px}h2{font-size:16px;margin:22px 0 12px}
+p{color:var(--dim);max-width:100ch}a{color:var(--a)}.lead{border-left:4px solid var(--a);padding-left:14px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+button{font:inherit;background:#364462;color:#fff;border:1px solid #697994;border-radius:8px;padding:11px 15px;cursor:pointer}
+button.primary{background:#186764;border-color:#51a897}button:disabled{opacity:.4;cursor:default}
+.metrics{display:flex;flex-wrap:wrap;gap:10px}.metric,.card{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:14px}
+.metric{min-width:150px}.metric strong{display:block;font-size:22px;color:var(--ok)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(275px,1fr));gap:12px}
+.card canvas{width:100%;aspect-ratio:1.55;display:block;border-radius:8px;background:#030513}
+.card small{color:var(--dim)}.spectral{height:18px;border-radius:9px;background:linear-gradient(90deg,#7800a0,#5300ff,#007bff,#00dca9,#b6ee00,#ffbf00,#ff3500,#c00000)}
+#qr-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.qr-item{border:1px solid var(--line);background:#fff;color:#111;padding:10px;border-radius:8px}
+.qr-item canvas{width:100%;image-rendering:pixelated;background:#fff}.qr-item button{display:block;width:100%;margin-top:6px}
+#notice{color:var(--ok);min-height:22px;white-space:pre-wrap}code{color:#ffda93}footer{margin-top:30px;border-top:1px solid var(--line);padding-top:14px;font-size:12px;color:var(--dim)}
+</style></head>
+<body><main>
+<h1>ASOLARIA / Centauri Freeze → Play</h1>
+<p class="lead">Press <b>START</b>. The mathematical field evolves continuously until <b>STOP</b>. Each frame samples an analytic field; the program never enumerates all possible points. Frozen three-view states are encoded into ordinary R/G/B multiplexed QR images by a separate worker. No QR operation runs inside the display frame callback.</p>
+<div class="controls">
+<button id="start" class="primary">START — RUN UNTIL STOP</button>
+<button id="stop" disabled>STOP</button>
+<button id="capture" disabled>FREEZE FRAME NOW</button>
+<button id="export" disabled>EXPORT VERIFIED FRAME + MANIFEST</button>
+</div>
+<div class="metrics" role="status" aria-live="polite">
+<div class="metric">Status <strong id="status">READY</strong></div>
+<div class="metric">Elapsed (s) <strong id="elapsed">0.00</strong></div>
+<div class="metric">Display frames <strong id="frame-count">0</strong></div>
+<div class="metric">Frozen QR frames <strong id="captures">0</strong></div>
+<div class="metric">Skipped captures <strong id="skipped">0</strong></div>
+</div>
+<p id="notice">Start to generate the first snapshot immediately; subsequent automatic snapshots are spaced 600 seconds apart. They never stop the experiment.</p>
+<h2>Three simultaneous 2D projections of one synthetic field</h2>
+<div class="row">
+<div class="card"><b>Camera 0 · front</b><canvas id="view0" width="360" height="232"></canvas><small>Yaw 0°, pitch 15°</small></div>
+<div class="card"><b>Camera 1 · rotated</b><canvas id="view1" width="360" height="232"></canvas><small>Yaw 120°, pitch 15°</small></div>
+<div class="card"><b>Camera 2 · rotated</b><canvas id="view2" width="360" height="232"></canvas><small>Yaw 240°, pitch 15°</small></div>
+</div>
+<h2>Full spectral-bin coordinate carried by every source</h2>
+<div class="spectral" aria-label="Illustrative visible rainbow from violet through red"></div>
+<p>Wavelength bins: 380, 425, 470, 515, 560, 605, 650, 695 and 740 nm. These numeric bins are preserved in the captured source data; RGB is used only to transport three ordinary QR symbols and to display the scene.</p>
+<h2>Latest independently encoded freeze frame</h2>
+<p id="snapshot-info">No frozen frame yet. A snapshot includes the three camera definitions, projection coordinates, spectral bins, UTC label, indexed QR chunks, and an expected SHA-256. The worker checks its byte-exact chunk roundtrip.</p>
+<div id="qr-list"></div>
+<p><a href="https://jessebrown1980.github.io/the-colour-qr/" target="_blank" rel="noopener">Use the original Colour QR reader</a> to independently decode the exported full-resolution QR PNG images.</p>
+<footer><b>Evidence scope:</b> This is a synthetic procedural field using Centauri names for test source labels. It contains no measured telescope images, stellar ephemerides, calibrated physical photon-memory experiment, gravitational inference, or quark-level simulation. Browser tabs can be throttled, suspended or closed by the OS; there is no user-imposed stop time, but indefinite real-world uptime needs a supervised native process. The screen displays the field; display pixels do not independently compute particle dynamics. Source code and receiver checks are inspectable.</footer>
+</main><script type="module" src="./app.mjs"></script></body></html>
